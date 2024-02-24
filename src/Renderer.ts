@@ -31,15 +31,11 @@ class Renderer {
   constructor(private canvas: HTMLCanvasElement, private gl: WebGLRenderingContext) {
     this.render = this.render.bind(this);
 
-    this.basicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, basicFS.sourceCode], ['vin_position']);
+    this.basicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, basicFS.sourceCode], ['vin_index']);
 
     // prettier-ignore
     this.fullscreenBuffer = twgl.createBufferInfoFromArrays(gl, {
-      vin_position: {numComponents: 2, data: [
-        -1, 3,
-        3, -1,
-        -1, -1
-      ]}
+      vin_index: {numComponents: 1, data: [0, 1, 2, 3, 4, 5]}
     });
 
     this.atlas = new FontAtlas(gl, fontAtlasImage, fontAtlasMeta);
@@ -87,20 +83,43 @@ class Renderer {
     const w = this.canvas.width;
     const h = this.canvas.height;
 
-    const dpr = window.devicePixelRatio || 1;
-    const screenSize = [w, h, 1.0 / w, 1.0 / h];
-    const screenRatio = [dpr, 1.0 / dpr, w / h, h / w];
+    const text = 'Hello World!';
+    const fontSizePx = 128;
+    let offset = 0.0;
+    for (const char of text) {
+      if (char === ' ') {
+        offset += (fontSizePx / w) * 0.5;
+        continue;
+      }
 
-    twgl.setUniforms(this.basicProgram, {
-      [basicVS.uniforms['u_screen_size'].variableName]: screenSize,
-      [basicVS.uniforms['u_screen_ratio'].variableName]: screenRatio,
-      [basicFS.uniforms['u_time'].variableName]: [this.props.time, this.stats.dt],
-      [basicFS.uniforms['u_offset'].variableName]: this.props.sinOffset,
-      [basicFS.uniforms['u_color'].variableName]: this.props.color,
-    });
+      const glypth = this.atlas.getGlyph(char)!;
+      const glypthBounds = [
+        glypth.atlasBounds!.left / this.atlas.meta.atlas.width,
+        glypth.atlasBounds!.bottom / this.atlas.meta.atlas.height,
+        glypth.atlasBounds!.right / this.atlas.meta.atlas.width,
+        glypth.atlasBounds!.top / this.atlas.meta.atlas.height,
+      ];
+      const glypthPlane = [
+        glypth.planeBounds!.left,
+        glypth.planeBounds!.bottom,
+        glypth.planeBounds!.right,
+        glypth.planeBounds!.top,
+      ];
+      const glypthSize = [(fontSizePx / w) * glypth.advance, fontSizePx / h];
 
-    twgl.setBuffersAndAttributes(gl, this.basicProgram, this.fullscreenBuffer);
-    twgl.drawBufferInfo(gl, this.fullscreenBuffer);
+      twgl.setUniforms(this.basicProgram, {
+        [basicVS.uniforms['u_glypth_size'].variableName]: glypthSize,
+        [basicVS.uniforms['u_glypth_offset'].variableName]: [offset, 0.0],
+        [basicVS.uniforms['u_glypth_plane'].variableName]: glypthPlane,
+        [basicFS.uniforms['u_screen_px_range'].variableName]: this.atlas.meta.atlas.distanceRange,
+        [basicFS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
+        [basicFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
+      });
+      offset += glypthSize[0];
+
+      twgl.setBuffersAndAttributes(gl, this.basicProgram, this.fullscreenBuffer);
+      twgl.drawBufferInfo(gl, this.fullscreenBuffer);
+    }
 
     this.stats.lastTime = time;
     this.animationHandler = requestAnimationFrame(this.render);

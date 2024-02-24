@@ -1,10 +1,10 @@
 import * as twgl from 'twgl.js';
-import type {FontAtlasMeta} from './FontAtlasMeta';
+import type {FontAtlasMeta, GlythMeta} from './FontAtlasMeta';
 
 export class FontAtlas {
-  atlasTexture: WebGLTexture;
+  readonly atlasTexture: WebGLTexture;
 
-  meta: FontAtlasMeta;
+  readonly meta: FontAtlasMeta;
 
   constructor(gl: WebGLRenderingContext, url: string, json: FontAtlasMeta) {
     this.meta = json;
@@ -12,6 +12,11 @@ export class FontAtlas {
       level: 0,
       internalFormat: gl.RGB,
     });
-    twgl.loadTextureFromUrl(gl, this.atlasTexture, {src: url});
+    twgl.loadTextureFromUrl(gl, this.atlasTexture, {src: url, flipY: 1});
+  }
+
+  getGlyph(character: string): GlythMeta | undefined {
+    const unicode = character.codePointAt(0);
+    return this.meta.glyphs.find(glypth => glypth.unicode === unicode);
   }
 }
