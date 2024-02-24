@@ -2,6 +2,9 @@ import * as twgl from 'twgl.js';
 import basicFS from './shaders/basic.frag';
 import basicVS from './shaders/basic.vert';
 import type {Tuple} from './utils/types';
+import {FontAtlas} from './font-atlas/FontAtlas';
+import fontAtlasImage from './res/sample-font.png';
+import * as fontAtlasMeta from './res/sample-font.json';
 
 class Renderer {
   private animationHandler = -1;
@@ -23,6 +26,8 @@ class Renderer {
     time: 1000,
   };
 
+  atlas: FontAtlas;
+
   constructor(private canvas: HTMLCanvasElement, private gl: WebGLRenderingContext) {
     this.render = this.render.bind(this);
 
@@ -36,6 +41,8 @@ class Renderer {
         -1, -1
       ]}
     });
+
+    this.atlas = new FontAtlas(gl, fontAtlasImage, fontAtlasMeta);
   }
 
   static initialize(canvas: HTMLCanvasElement): Renderer | null {
@@ -44,7 +51,7 @@ class Renderer {
       antialias: false,
       depth: false,
       stencil: false,
-      powerPreference: 'low-power',
+      powerPreference: 'high-performance',
     };
     const gl = canvas.getContext('webgl2', attributes);
     if (gl === null) {

@@ -5,7 +5,7 @@
     }
   ],
   "settings": {
-    "editor.tabSize": 2,
+    "editor.tabSize": 4,
     "trailing-spaces.deleteModifiedLinesOnly": true,
     "trailing-spaces.trimOnSave": true,
     "editor.wordWrapColumn": 120,

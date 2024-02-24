@@ -1,0 +1,1 @@
+msdf-atlas-gen.exe -font OpenSans-Regular.ttf -type msdf -imageout ../res/sample-font.png -json ../res/sample-font.json

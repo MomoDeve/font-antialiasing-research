@@ -2,7 +2,6 @@ import {Pane} from 'tweakpane';
 import './index.scss';
 import {Renderer} from './Renderer';
 import {NormalizedColorWrapper, VectorWrapper} from './utils/tweakpane';
-
 const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
 console.assert(canvas !== null, "Element with id 'main-canvas' must exists");
 
