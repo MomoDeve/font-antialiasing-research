@@ -38,6 +38,8 @@ class Renderer {
     this.fullscreenBuffer = twgl.createBufferInfoFromArrays(gl, {
       vin_index: {numComponents: 1, data: [0, 1, 2, 3, 4, 5]}
     });
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     this.atlas = new FontAtlas(gl, fontAtlasImage, fontAtlasMeta);
     this.perfQuery = new Query(gl);
@@ -45,7 +47,7 @@ class Renderer {
 
   static initialize(canvas: HTMLCanvasElement): Renderer | null {
     const attributes: WebGLContextAttributes = {
-      alpha: false,
+      alpha: true,
       antialias: false,
       depth: false,
       stencil: false,
@@ -77,7 +79,7 @@ class Renderer {
     this.stats.fps = 1000.0 / this.stats.dt; // approximation from delta time, you can count frames in second instead
 
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    gl.clearColor(1, 0, 1, 1); // 🟪
+    gl.clearColor(1, 1, 1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.useProgram(this.basicProgram.program);
