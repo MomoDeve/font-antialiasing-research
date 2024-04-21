@@ -24,5 +24,6 @@ void main()
   float sd = median(msd.r, msd.g, msd.b);
   float screenPxDistance = u_screen_px_range * (sd - 0.5);
   float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+  if (opacity == 0.0) discard;
   fout_color = mix(bgColor, fgColor, opacity);
 }

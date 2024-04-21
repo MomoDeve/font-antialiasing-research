@@ -1,7 +1,6 @@
 import * as twgl from 'twgl.js';
 import basicFS from './shaders/basic.frag';
 import basicVS from './shaders/basic.vert';
-import type {Tuple} from './utils/types';
 import {FontAtlas} from './font-atlas/FontAtlas';
 import fontAtlasImage from './res/sample-font.png';
 import * as fontAtlasMeta from './res/sample-font.json';
@@ -20,10 +19,8 @@ class Renderer {
   };
 
   props = {
-    color: [1.0, 1.0, 1.0, 1.0] as Tuple<number, 4>,
-    sinOffset: [2, 4],
-    timeMultiplier: 1.0,
-    time: 1000,
+    fontSize: 128,
+    text: 'abcdefghijklmopq 1234567890',
   };
 
   atlas: FontAtlas;
@@ -72,7 +69,6 @@ class Renderer {
     const t0 = performance.now();
     const gl = this.gl;
     this.stats.dt = time - this.stats.lastTime;
-    this.props.time += this.stats.dt * this.props.timeMultiplier;
     this.stats.fps = 1000.0 / this.stats.dt; // approximation from delta time, you can count frames in second instead
 
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -83,29 +79,32 @@ class Renderer {
     const w = this.canvas.width;
     const h = this.canvas.height;
 
-    const text = 'Hello World!';
-    const fontSizePx = 128;
+    const fontSizeW = this.props.fontSize / w;
+    const fontSizeH = this.props.fontSize / h;
+
     let offset = 0.0;
-    for (const char of text) {
+    for (const char of this.props.text) {
       if (char === ' ') {
-        offset += (fontSizePx / w) * 0.5;
+        offset += fontSizeW * 0.5;
         continue;
       }
 
       const glypth = this.atlas.getGlyph(char)!;
+      if (!glypth.atlasBounds || !glypth.planeBounds) continue;
+
       const glypthBounds = [
-        glypth.atlasBounds!.left / this.atlas.meta.atlas.width,
-        glypth.atlasBounds!.bottom / this.atlas.meta.atlas.height,
-        glypth.atlasBounds!.right / this.atlas.meta.atlas.width,
-        glypth.atlasBounds!.top / this.atlas.meta.atlas.height,
+        glypth.atlasBounds.left / this.atlas.meta.atlas.width,
+        glypth.atlasBounds.bottom / this.atlas.meta.atlas.height,
+        glypth.atlasBounds.right / this.atlas.meta.atlas.width,
+        glypth.atlasBounds.top / this.atlas.meta.atlas.height,
       ];
       const glypthPlane = [
-        glypth.planeBounds!.left,
-        glypth.planeBounds!.bottom,
-        glypth.planeBounds!.right,
-        glypth.planeBounds!.top,
+        glypth.planeBounds.left,
+        glypth.planeBounds.bottom,
+        glypth.planeBounds.right,
+        glypth.planeBounds.top,
       ];
-      const glypthSize = [(fontSizePx / w) * glypth.advance, fontSizePx / h];
+      const glypthSize = [fontSizeW, fontSizeH];
 
       twgl.setUniforms(this.basicProgram, {
         [basicVS.uniforms['u_glypth_size'].variableName]: glypthSize,
@@ -115,7 +114,7 @@ class Renderer {
         [basicFS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
         [basicFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
       });
-      offset += glypthSize[0];
+      offset += fontSizeW * glypth.advance;
 
       twgl.setBuffersAndAttributes(gl, this.basicProgram, this.fullscreenBuffer);
       twgl.drawBufferInfo(gl, this.fullscreenBuffer);

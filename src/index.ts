@@ -16,13 +16,9 @@ if (renderer) {
   perf.addMonitor(renderer.stats, 'fps', {label: 'FPS'});
   perf.addMonitor(renderer.stats, 'dt', {label: 'dt'});
 
-  const props = pane.addFolder({title: 'Style', expanded: true});
-  props.addInput(new NormalizedColorWrapper(renderer.props, 'color'), 'rgb', {label: 'Mask'});
-  const time = props.addInput(renderer.props, 'time', {label: 'Time', format: v => (v * 0.001).toFixed(1)});
-  props.addInput(renderer.props, 'timeMultiplier', {label: 'Speed'});
-  props.addInput(new VectorWrapper(renderer.props, 'sinOffset'), 'xy', {label: 'Offset'});
-
-  renderer.onUpdate(() => time.refresh());
+  const props = pane.addFolder({title: 'MSDF Text', expanded: true});
+  props.addInput(renderer.props, 'fontSize', {label: 'Font size'});
+  props.addInput(renderer.props, 'text', {label: 'text'});
 }
 
 const invalidateCanvasSize = () => {
