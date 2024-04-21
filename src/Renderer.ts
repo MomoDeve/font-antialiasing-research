@@ -4,6 +4,7 @@ import basicVS from './shaders/basic.vert';
 import {FontAtlas} from './font-atlas/FontAtlas';
 import fontAtlasImage from './res/sample-font.png';
 import * as fontAtlasMeta from './res/sample-font.json';
+import {Query} from './Query';
 
 class Renderer {
   private animationHandler = -1;
@@ -16,6 +17,7 @@ class Renderer {
     dt: 0, // time between frame begin points (delta time)
     fps: 0, // Frames Per Second
     lastTime: 0, // last render timestamp
+    renderTime: 0, // time spend rendering (ns)
   };
 
   props = {
@@ -25,7 +27,9 @@ class Renderer {
 
   atlas: FontAtlas;
 
-  constructor(private canvas: HTMLCanvasElement, private gl: WebGLRenderingContext) {
+  perfQuery: Query;
+
+  constructor(private canvas: HTMLCanvasElement, private gl: WebGL2RenderingContext) {
     this.render = this.render.bind(this);
 
     this.basicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, basicFS.sourceCode], ['vin_index']);
@@ -36,6 +40,7 @@ class Renderer {
     });
 
     this.atlas = new FontAtlas(gl, fontAtlasImage, fontAtlasMeta);
+    this.perfQuery = new Query(gl);
   }
 
   static initialize(canvas: HTMLCanvasElement): Renderer | null {
@@ -76,11 +81,20 @@ class Renderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.useProgram(this.basicProgram.program);
+    twgl.setBuffersAndAttributes(gl, this.basicProgram, this.fullscreenBuffer);
+
     const w = this.canvas.width;
     const h = this.canvas.height;
 
     const fontSizeW = this.props.fontSize / w;
     const fontSizeH = this.props.fontSize / h;
+
+    const renderTime = this.perfQuery.poll();
+    if (renderTime) {
+      this.stats.renderTime = renderTime / 1000000;
+    }
+
+    this.perfQuery.start();
 
     let offset = 0.0;
     for (const char of this.props.text) {
@@ -108,7 +122,7 @@ class Renderer {
 
       twgl.setUniforms(this.basicProgram, {
         [basicVS.uniforms['u_glypth_size'].variableName]: glypthSize,
-        [basicVS.uniforms['u_glypth_offset'].variableName]: [offset, 0.0],
+        [basicVS.uniforms['u_glypth_offset'].variableName]: [offset, -0.0],
         [basicVS.uniforms['u_glypth_plane'].variableName]: glypthPlane,
         [basicFS.uniforms['u_screen_px_range'].variableName]: this.atlas.meta.atlas.distanceRange,
         [basicFS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
@@ -116,9 +130,10 @@ class Renderer {
       });
       offset += fontSizeW * glypth.advance;
 
-      twgl.setBuffersAndAttributes(gl, this.basicProgram, this.fullscreenBuffer);
       twgl.drawBufferInfo(gl, this.fullscreenBuffer);
     }
+
+    this.perfQuery.finish();
 
     this.stats.lastTime = time;
     this.animationHandler = requestAnimationFrame(this.render);
