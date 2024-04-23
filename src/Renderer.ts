@@ -1,16 +1,30 @@
 import * as twgl from 'twgl.js';
 import basicFS from './shaders/basic.frag';
+import smoothBasicFS from './shaders/smooth-basic.frag';
 import basicVS from './shaders/basic.vert';
 import {FontAtlas} from './font-atlas/FontAtlas';
 import fontAtlasImage from './res/sample-font.png';
 import * as fontAtlasMeta from './res/sample-font.json';
 import {Query} from './Query';
 
+export enum RenderProgram {
+  Basic,
+  SmoothBasic,
+}
+
 class Renderer {
   private animationHandler = -1;
+
   private basicProgram: twgl.ProgramInfo;
+  private smoothBasicProgram: twgl.ProgramInfo;
+
   private fullscreenBuffer: twgl.BufferInfo;
   private onUpdateSubscription: VoidFunction | null = null;
+
+  glInfo: {
+    renderer: string;
+    vendor: string;
+  };
 
   stats = {
     ft: 0, // time between frame begin and end (frame time)
@@ -21,8 +35,9 @@ class Renderer {
   };
 
   props = {
-    fontSize: 128,
+    smoothness: 0.1,
     text: 'abcdefghijklmopq 1234567890',
+    program: RenderProgram.Basic,
   };
 
   atlas: FontAtlas;
@@ -33,6 +48,7 @@ class Renderer {
     this.render = this.render.bind(this);
 
     this.basicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, basicFS.sourceCode], ['vin_index']);
+    this.smoothBasicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, smoothBasicFS.sourceCode], ['vin_index']);
 
     // prettier-ignore
     this.fullscreenBuffer = twgl.createBufferInfoFromArrays(gl, {
@@ -43,6 +59,13 @@ class Renderer {
 
     this.atlas = new FontAtlas(gl, fontAtlasImage, fontAtlasMeta);
     this.perfQuery = new Query(gl);
+
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+
+    this.glInfo = {
+      renderer: gl.getParameter(debugInfo?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER),
+      vendor: gl.getParameter(debugInfo?.UNMASKED_VENDOR_WEBGL ?? gl.VENDOR),
+    };
   }
 
   static initialize(canvas: HTMLCanvasElement): Renderer | null {
@@ -82,14 +105,17 @@ class Renderer {
     gl.clearColor(1, 1, 1, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.useProgram(this.basicProgram.program);
-    twgl.setBuffersAndAttributes(gl, this.basicProgram, this.fullscreenBuffer);
-
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-
-    const fontSizeW = this.props.fontSize / w;
-    const fontSizeH = this.props.fontSize / h;
+    let program;
+    let shaderFS;
+    if (this.props.program === RenderProgram.SmoothBasic) {
+      program = this.smoothBasicProgram;
+      shaderFS = smoothBasicFS;
+    } else {
+      program = this.basicProgram;
+      shaderFS = basicFS;
+    }
+    gl.useProgram(program.program);
+    twgl.setBuffersAndAttributes(gl, program, this.fullscreenBuffer);
 
     const renderTime = this.perfQuery.poll();
     if (renderTime) {
@@ -98,41 +124,49 @@ class Renderer {
 
     this.perfQuery.start();
 
-    let offset = 0.0;
-    for (const char of this.props.text) {
-      if (char === ' ') {
-        offset += fontSizeW * 0.5;
-        continue;
+    const fontSizes = [12, 16, 24, 36, 72, 144, 216];
+    let verticalOffset = 0;
+    for (const fontSize of fontSizes) {
+      const fontSizeW = fontSize / this.canvas.width;
+      const fontSizeH = fontSize / this.canvas.height;
+
+      let horizontalOffset = 0.0;
+      for (const char of this.props.text) {
+        if (char === ' ') {
+          horizontalOffset += fontSizeW * 0.5;
+          continue;
+        }
+
+        const glypth = this.atlas.getGlyph(char)!;
+        if (!glypth.atlasBounds || !glypth.planeBounds) continue;
+
+        const glypthBounds = [
+          glypth.atlasBounds.left / this.atlas.meta.atlas.width,
+          glypth.atlasBounds.bottom / this.atlas.meta.atlas.height,
+          glypth.atlasBounds.right / this.atlas.meta.atlas.width,
+          glypth.atlasBounds.top / this.atlas.meta.atlas.height,
+        ];
+        const glypthPlane = [
+          glypth.planeBounds.left,
+          glypth.planeBounds.bottom,
+          glypth.planeBounds.right,
+          glypth.planeBounds.top,
+        ];
+        const glypthSize = [fontSizeW, fontSizeH];
+
+        twgl.setUniforms(program, {
+          [basicVS.uniforms['u_glypth_size'].variableName]: glypthSize,
+          [basicVS.uniforms['u_glypth_offset'].variableName]: [horizontalOffset, -verticalOffset],
+          [basicVS.uniforms['u_glypth_plane'].variableName]: glypthPlane,
+          [shaderFS.uniforms['u_screen_px_range'].variableName]: this.props.smoothness * fontSize,
+          [shaderFS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
+          [shaderFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
+        });
+        horizontalOffset += fontSizeW * glypth.advance;
+
+        twgl.drawBufferInfo(gl, this.fullscreenBuffer);
       }
-
-      const glypth = this.atlas.getGlyph(char)!;
-      if (!glypth.atlasBounds || !glypth.planeBounds) continue;
-
-      const glypthBounds = [
-        glypth.atlasBounds.left / this.atlas.meta.atlas.width,
-        glypth.atlasBounds.bottom / this.atlas.meta.atlas.height,
-        glypth.atlasBounds.right / this.atlas.meta.atlas.width,
-        glypth.atlasBounds.top / this.atlas.meta.atlas.height,
-      ];
-      const glypthPlane = [
-        glypth.planeBounds.left,
-        glypth.planeBounds.bottom,
-        glypth.planeBounds.right,
-        glypth.planeBounds.top,
-      ];
-      const glypthSize = [fontSizeW, fontSizeH];
-
-      twgl.setUniforms(this.basicProgram, {
-        [basicVS.uniforms['u_glypth_size'].variableName]: glypthSize,
-        [basicVS.uniforms['u_glypth_offset'].variableName]: [offset, -0.0],
-        [basicVS.uniforms['u_glypth_plane'].variableName]: glypthPlane,
-        [basicFS.uniforms['u_screen_px_range'].variableName]: this.atlas.meta.atlas.distanceRange,
-        [basicFS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
-        [basicFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
-      });
-      offset += fontSizeW * glypth.advance;
-
-      twgl.drawBufferInfo(gl, this.fullscreenBuffer);
+      verticalOffset += fontSizeH * 2;
     }
 
     this.perfQuery.finish();
