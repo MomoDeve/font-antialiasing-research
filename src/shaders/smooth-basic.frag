@@ -6,6 +6,7 @@ out vec4 fout_color;
 
 uniform float u_screen_px_range;
 uniform vec4 u_glypth_bounds;
+uniform vec2 u_inv_screen_size;
 
 uniform sampler2D u_font_atlas;
 

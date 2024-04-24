@@ -27,6 +27,7 @@ if (renderer) {
     options: [
       {text: 'basic', value: RenderProgram.Basic},
       {text: 'smooth basic', value: RenderProgram.SmoothBasic},
+      {text: 'anti-alias', value: RenderProgram.AntiAlias},
     ],
   });
 }

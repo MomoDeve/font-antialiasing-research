@@ -1,6 +1,7 @@
 import * as twgl from 'twgl.js';
 import basicFS from './shaders/basic.frag';
 import smoothBasicFS from './shaders/smooth-basic.frag';
+import antiAliasFS from './shaders/anti-alias.frag';
 import basicVS from './shaders/basic.vert';
 import {FontAtlas} from './font-atlas/FontAtlas';
 import fontAtlasImage from './res/sample-font.png';
@@ -10,6 +11,7 @@ import {Query} from './Query';
 export enum RenderProgram {
   Basic,
   SmoothBasic,
+  AntiAlias,
 }
 
 class Renderer {
@@ -17,6 +19,7 @@ class Renderer {
 
   private basicProgram: twgl.ProgramInfo;
   private smoothBasicProgram: twgl.ProgramInfo;
+  private antiAliasProgram: twgl.ProgramInfo;
 
   private fullscreenBuffer: twgl.BufferInfo;
   private onUpdateSubscription: VoidFunction | null = null;
@@ -35,7 +38,7 @@ class Renderer {
   };
 
   props = {
-    smoothness: 0.1,
+    smoothness: 0.05,
     text: 'abcdefghijklmopq 1234567890',
     program: RenderProgram.Basic,
   };
@@ -49,6 +52,7 @@ class Renderer {
 
     this.basicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, basicFS.sourceCode], ['vin_index']);
     this.smoothBasicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, smoothBasicFS.sourceCode], ['vin_index']);
+    this.antiAliasProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, antiAliasFS.sourceCode], ['vin_index']);
 
     // prettier-ignore
     this.fullscreenBuffer = twgl.createBufferInfoFromArrays(gl, {
@@ -110,6 +114,9 @@ class Renderer {
     if (this.props.program === RenderProgram.SmoothBasic) {
       program = this.smoothBasicProgram;
       shaderFS = smoothBasicFS;
+    } else if (this.props.program === RenderProgram.AntiAlias) {
+      program = this.antiAliasProgram;
+      shaderFS = antiAliasFS;
     } else {
       program = this.basicProgram;
       shaderFS = basicFS;
@@ -161,6 +168,7 @@ class Renderer {
           [shaderFS.uniforms['u_screen_px_range'].variableName]: this.props.smoothness * fontSize,
           [shaderFS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
           [shaderFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
+          [shaderFS.uniforms['u_inv_screen_size'].variableName]: [1.0 / this.canvas.width, 1.0 / this.canvas.height],
         });
         horizontalOffset += fontSizeW * glypth.advance;
 
