@@ -6,6 +6,7 @@ out vec2 vout_uv;
 uniform vec2 u_glypth_size;
 uniform vec2 u_glypth_offset;
 uniform vec4 u_glypth_plane;
+uniform vec4 u_glypth_bounds;
 
 void main()
 {
@@ -16,6 +17,6 @@ void main()
   vec2 glyphOrigin = vec2(-1.0, 1.0 - 2.0 * u_glypth_size.y);
   vec2 position = glyphOrigin + 2.0 * (u_glypth_offset + u_glypth_size * glyphPlane);
 
-  vout_uv = vec2(x, y);
+  vout_uv = mix(u_glypth_bounds.xy, u_glypth_bounds.zw, vec2(x, y));
   gl_Position =  vec4(position, 0.0, 1.0);
 }

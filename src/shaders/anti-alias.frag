@@ -4,9 +4,7 @@ precision mediump float;
 in vec2 vout_uv;
 out vec4 fout_color;
 
-uniform float u_screen_px_range;
-uniform vec4 u_glypth_bounds;
-uniform vec2 u_inv_screen_size;
+uniform float u_smoothness;
 
 uniform sampler2D u_font_atlas;
 
@@ -16,23 +14,29 @@ float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));
 }
 
-float sampleSDF(vec2 uv) {
-    vec2 texCoord = mix(u_glypth_bounds.xy, u_glypth_bounds.zw, uv);
-    vec3 msd = texture(u_font_atlas, texCoord).rgb;
-    float sd = median(msd.r, msd.g, msd.b);
-    return step(0.5, sd);
+float sampleSDF(vec2 texcoord, float distance) {
+  vec3 msd = texture(u_font_atlas, texcoord).rgb;
+  float sd = median(msd.r, msd.g, msd.b) - 0.5;
+  float opacity = clamp(sd * distance + 0.5, 0.0, 1.0);
+  return opacity;
 }
 
 void main()
 {
-  vec2 offset = vec2( u_inv_screen_size.x, 0);
-  vec2 uvL = vout_uv - offset;
-  vec2 uvR = vout_uv + offset;
+  vec2 dxdy = vec2(dFdx(vout_uv.x), dFdy(vout_uv.y));
 
-  float sdL = sampleSDF(uvL);
-  float sdR = sampleSDF(uvR);
+  vec2 atlasSize = vec2(textureSize(u_font_atlas, 0));
+  vec2 dAtlas = dxdy * atlasSize;
+  float pixelDistance = u_smoothness * inversesqrt(dAtlas.x * dAtlas.x + dAtlas.y * dAtlas.y);
 
-  vec3 opacity = vec3(sdL, mix(sdL, sdR, 0.5), sdR);
+  vec2 offset = dxdy * vec2(1.0 / 3.0, 0.0);
+
+  vec3 RGB = vec3(
+    sampleSDF(vout_uv - offset, pixelDistance),
+    sampleSDF(vout_uv, pixelDistance),
+    sampleSDF(vout_uv + offset, pixelDistance)
+  );
+  float opacity = max(RGB.r, max(RGB.g, RGB.b));
   
-  fout_color = vec4(vec3(1.0) - opacity, max(sdL, sdR));
+  fout_color = vec4(vec3(1.0) - RGB, opacity);
 }

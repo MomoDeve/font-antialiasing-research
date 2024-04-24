@@ -4,9 +4,7 @@ precision mediump float;
 in vec2 vout_uv;
 out vec4 fout_color;
 
-uniform float u_screen_px_range;
-uniform vec4 u_glypth_bounds;
-uniform vec2 u_inv_screen_size;
+uniform float u_smoothness;
 
 uniform sampler2D u_font_atlas;
 
@@ -18,9 +16,7 @@ float median(float r, float g, float b) {
 
 void main()
 {
-  vec2 texCoord = mix(u_glypth_bounds.xy, u_glypth_bounds.zw, vout_uv);
-
-  vec3 msd = texture(u_font_atlas, texCoord).rgb;
+  vec3 msd = texture(u_font_atlas, vout_uv).rgb;
   float sd = median(msd.r, msd.g, msd.b);
   float opacity = sd >= 0.5 ? 1.0 : 0.0;
   fout_color = vec4(color, opacity);

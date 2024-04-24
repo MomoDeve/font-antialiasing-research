@@ -20,7 +20,7 @@ if (renderer) {
   perf.addMonitor(renderer.stats, 'renderTime', {label: 'render (ms)'});
 
   const props = pane.addFolder({title: 'MSDF text settings', expanded: true});
-  props.addInput(renderer.props, 'smoothness', {min: 0, max: 0.5, step: 0.01});
+  props.addInput(renderer.props, 'smoothness', {min: 0, max: 20.0, step: 0.01});
   props.addInput(renderer.props, 'text', {label: 'text'});
   props.addInput(renderer.props, 'program', {
     label: 'program',

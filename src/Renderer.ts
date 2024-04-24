@@ -38,7 +38,7 @@ class Renderer {
   };
 
   props = {
-    smoothness: 0.05,
+    smoothness: 8.0,
     text: 'abcdefghijklmopq 1234567890',
     program: RenderProgram.Basic,
   };
@@ -165,10 +165,9 @@ class Renderer {
           [basicVS.uniforms['u_glypth_size'].variableName]: glypthSize,
           [basicVS.uniforms['u_glypth_offset'].variableName]: [horizontalOffset, -verticalOffset],
           [basicVS.uniforms['u_glypth_plane'].variableName]: glypthPlane,
-          [shaderFS.uniforms['u_screen_px_range'].variableName]: this.props.smoothness * fontSize,
-          [shaderFS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
+          [basicVS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
+          [shaderFS.uniforms['u_smoothness'].variableName]: this.props.smoothness,
           [shaderFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
-          [shaderFS.uniforms['u_inv_screen_size'].variableName]: [1.0 / this.canvas.width, 1.0 / this.canvas.height],
         });
         horizontalOffset += fontSizeW * glypth.advance;
 
