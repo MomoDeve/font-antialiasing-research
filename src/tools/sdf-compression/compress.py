@@ -9,6 +9,8 @@ from typing import Any, List
 
 def compress_sdf(sdf: npt.NDArray[Any], sdf_channels, sdf_width, sdf_height, max_error=0):
     compressed_data = bytearray()
+    compressed_data.append(sdf_channels)
+
     for channel in range(sdf_channels):
         channel_data = sdf[:,:,channel].flatten()
         min_dist = int(np.min(channel_data))
@@ -23,7 +25,7 @@ def compress_sdf(sdf: npt.NDArray[Any], sdf_channels, sdf_width, sdf_height, max
 def predict_func(width, max_error):
     def predict(sdf, i):
         d02 = sdf[i] ** 2
-        if i >= width + 1:
+        if i >= 2 * width + 1:
             dd1, dd2 = sdf[i - (width + 1)], sdf[i - 2 * (width + 1)]
             if abs(d02 - (2 * dd1 ** 2 - dd2 ** 2)) <= max_error:
                 return 3
@@ -82,7 +84,7 @@ def vdt_compress(sdf_data, width, height, min_dist, max_dist, max_error=0):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("run file as 'ssim.py {sdf_image_path}'")
+        print("run file as 'compress.py {sdf_image_path}'")
         exit()
 
     image_path = sys.argv[1]
