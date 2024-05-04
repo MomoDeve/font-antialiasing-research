@@ -7,6 +7,8 @@ import {FontAtlas} from './font-atlas/FontAtlas';
 import fontAtlasImage from './res/sample-font.png';
 import * as fontAtlasMeta from './res/sample-font.json';
 import {Query} from './Query';
+// eslint-disable-next-line node/no-unpublished-import
+import type {GlslShader} from 'webpack-glsl-minify';
 
 export enum RenderProgram {
   Basic,
@@ -39,7 +41,7 @@ class Renderer {
 
   props = {
     smoothness: 8.0,
-    text: 'abcdefghijklmopq 1234567890',
+    text: 'The quick brown fox jumps over the lazy dog. 1234567890',
     program: RenderProgram.Basic,
   };
 
@@ -99,6 +101,69 @@ class Renderer {
     this.onUpdateSubscription = cb;
   }
 
+  renderGlyph(
+    char: string,
+    program: twgl.ProgramInfo,
+    shaderVS: GlslShader,
+    shaderFS: GlslShader,
+    fontSize: number,
+    xOffset: number,
+    yOffset: number
+  ): number {
+    const fontSizeW = fontSize / this.canvas.width;
+    const fontSizeH = fontSize / this.canvas.height;
+
+    if (char === ' ') {
+      xOffset += fontSizeW * 0.5;
+      return xOffset;
+    }
+
+    const glypth = this.atlas.getGlyph(char)!;
+    if (!glypth.atlasBounds || !glypth.planeBounds) return xOffset;
+
+    const glypthBounds = [
+      glypth.atlasBounds.left / this.atlas.meta.atlas.width,
+      glypth.atlasBounds.bottom / this.atlas.meta.atlas.height,
+      glypth.atlasBounds.right / this.atlas.meta.atlas.width,
+      glypth.atlasBounds.top / this.atlas.meta.atlas.height,
+    ];
+    const glypthPlane = [
+      glypth.planeBounds.left,
+      glypth.planeBounds.bottom,
+      glypth.planeBounds.right,
+      glypth.planeBounds.top,
+    ];
+    const glypthSize = [fontSizeW, fontSizeH];
+
+    twgl.setUniforms(program, {
+      [shaderVS.uniforms['u_glypth_size'].variableName]: glypthSize,
+      [shaderVS.uniforms['u_glypth_offset'].variableName]: [xOffset, -yOffset],
+      [shaderVS.uniforms['u_glypth_plane'].variableName]: glypthPlane,
+      [shaderVS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
+      [shaderFS.uniforms['u_smoothness'].variableName]: this.props.smoothness,
+      [shaderFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
+    });
+    xOffset += fontSizeW * glypth.advance;
+
+    twgl.drawBufferInfo(this.gl, this.fullscreenBuffer);
+    return xOffset;
+  }
+
+  renderText(
+    text: string,
+    program: twgl.ProgramInfo,
+    shaderVS: GlslShader,
+    shaderFS: GlslShader,
+    fontSize: number,
+    xOffset: number,
+    yOffset: number
+  ): number {
+    for (const glyph of text) {
+      xOffset = this.renderGlyph(glyph, program, shaderVS, shaderFS, fontSize, xOffset, yOffset);
+    }
+    return xOffset;
+  }
+
   render(time: number): void {
     const t0 = performance.now();
     const gl = this.gl;
@@ -131,49 +196,21 @@ class Renderer {
 
     this.perfQuery.start();
 
-    const fontSizes = [12, 16, 24, 36, 72, 144, 216];
-    let verticalOffset = 0;
+    const ptToPx = (x: number) => x * (4.0 / 3.0);
+    const fontSizes = [12, 18, 36, 48, 60, 72, 84, 96];
+    const baseOffset = {x: 0 / this.canvas.width, y: 5 / this.canvas.height};
+
+    let yOffset = baseOffset.y;
     for (const fontSize of fontSizes) {
-      const fontSizeW = fontSize / this.canvas.width;
-      const fontSizeH = fontSize / this.canvas.height;
+      let xOffset = baseOffset.x;
+      const fontSizePx = ptToPx(fontSize);
 
-      let horizontalOffset = 0.0;
-      for (const char of this.props.text) {
-        if (char === ' ') {
-          horizontalOffset += fontSizeW * 0.5;
-          continue;
-        }
+      const markFontSize = ptToPx(12);
+      const markYOffset = yOffset + (fontSizePx - markFontSize) / this.canvas.height;
+      xOffset = this.renderText(`${fontSize} `, program, basicVS, shaderFS, markFontSize, xOffset, markYOffset);
 
-        const glypth = this.atlas.getGlyph(char)!;
-        if (!glypth.atlasBounds || !glypth.planeBounds) continue;
-
-        const glypthBounds = [
-          glypth.atlasBounds.left / this.atlas.meta.atlas.width,
-          glypth.atlasBounds.bottom / this.atlas.meta.atlas.height,
-          glypth.atlasBounds.right / this.atlas.meta.atlas.width,
-          glypth.atlasBounds.top / this.atlas.meta.atlas.height,
-        ];
-        const glypthPlane = [
-          glypth.planeBounds.left,
-          glypth.planeBounds.bottom,
-          glypth.planeBounds.right,
-          glypth.planeBounds.top,
-        ];
-        const glypthSize = [fontSizeW, fontSizeH];
-
-        twgl.setUniforms(program, {
-          [basicVS.uniforms['u_glypth_size'].variableName]: glypthSize,
-          [basicVS.uniforms['u_glypth_offset'].variableName]: [horizontalOffset, -verticalOffset],
-          [basicVS.uniforms['u_glypth_plane'].variableName]: glypthPlane,
-          [basicVS.uniforms['u_glypth_bounds'].variableName]: glypthBounds,
-          [shaderFS.uniforms['u_smoothness'].variableName]: this.props.smoothness,
-          [shaderFS.uniforms['u_font_atlas'].variableName]: this.atlas.atlasTexture,
-        });
-        horizontalOffset += fontSizeW * glypth.advance;
-
-        twgl.drawBufferInfo(gl, this.fullscreenBuffer);
-      }
-      verticalOffset += fontSizeH * 2;
+      xOffset = this.renderText(this.props.text, program, basicVS, shaderFS, fontSizePx, xOffset, yOffset);
+      yOffset += (fontSizePx / this.canvas.height) * 1.38;
     }
 
     this.perfQuery.finish();
