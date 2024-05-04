@@ -37,6 +37,13 @@ void main()
     sampleSDF(vout_uv + offset, pixelDistance)
   );
   float opacity = max(RGB.r, max(RGB.g, RGB.b));
+
+  float prop = 1.0 / 3.0;
+  vec3 color = 
+    RGB.r * vec3(1.0, prop, 0.0) +
+    RGB.g * vec3(prop, 1.0, prop) +
+    RGB.b * vec3(0.0, prop, 1.0);
+  color = vec3(1.0) - min(color, vec3(1.0));
   
-  fout_color = vec4(vec3(1.0) - RGB, opacity);
+  fout_color = vec4(color, opacity);
 }
