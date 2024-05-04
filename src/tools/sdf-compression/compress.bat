@@ -1,0 +1,1 @@
+python ./compress.py ../../res/sample-font.png

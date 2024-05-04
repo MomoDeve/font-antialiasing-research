@@ -2,6 +2,8 @@ import numpy as np
 import numpy.typing as npt
 import sys
 from PIL import Image
+import lzma
+
 from typing import Any, List
 
 def save_sdf(sdf: npt.NDArray[Any], filename: str, sdf_channels: int, sdf_width: int, sdf_height: int, max_error=0):
@@ -13,10 +15,13 @@ def save_sdf(sdf: npt.NDArray[Any], filename: str, sdf_channels: int, sdf_width:
         channel_compressed_data = vdt_compress(channel_data, sdf_width, sdf_height, min_dist, max_dist, max_error)
         compressed_data.extend(channel_compressed_data)
 
+    # compress vdt encoded data
+    compressed_data = lzma.compress(compressed_data)
+
     with open(filename, "wb") as f:
         f.write(compressed_data)
 
-def _predict(width, max_error):
+def predict_func(width, max_error):
     def predict(sdf, i):
         d02 = sdf[i] ** 2
         if i >= width + 1:
@@ -34,18 +39,18 @@ def _predict(width, max_error):
         return 0
     return predict
 
-def mapi(lst, func):
+def map_sdf(lst, func):
     return [func(lst, i) for i in range(len(lst))]
 
 def filter_dists(sdf, vecs):
     return [sdf[i] for i in range(len(vecs)) if vecs[i] == 0]
 
-def _calc_vdt(sdf, width, max_error):
-    vecs = mapi(sdf, _predict(width, max_error))
+def vdt_calc(sdf, width, max_error):
+    vecs = map_sdf(sdf, predict_func(width, max_error))
     dists = filter_dists(sdf, vecs)
     return vecs, dists
 
-def lst_to_bin(lst: List[int], bits: int) -> bytes:
+def encode_bits(lst: List[int], bits: int) -> bytes:
     accumulator = 0
     bit_count = 0
     result = bytearray()
@@ -65,15 +70,15 @@ def lst_to_bin(lst: List[int], bits: int) -> bytes:
 
 def vdt_compress(sdf_data, width, height, min_dist, max_dist, max_error=0):
     result = bytearray()
-    vecs, dists = _calc_vdt(sdf_data, width, max_error)
+    vecs, dists = vdt_calc(sdf_data, width, max_error)
     dist_bits = 16 if max_dist - min_dist > 255 else 8
 
-    result.extend(lst_to_bin([min_dist], 16))
-    result.extend(lst_to_bin([dist_bits], 8))
-    result.extend(lst_to_bin([width], 16))
-    result.extend(lst_to_bin([height], 16))
-    result.extend(lst_to_bin(vecs, 2))
-    result.extend(lst_to_bin(dists, 8))
+    result.extend(encode_bits([min_dist], 16))
+    result.extend(encode_bits([dist_bits], 8))
+    result.extend(encode_bits([width], 16))
+    result.extend(encode_bits([height], 16))
+    result.extend(encode_bits(vecs, 2))
+    result.extend(encode_bits(dists, 8))
     return result
 
 if __name__ == "__main__":
