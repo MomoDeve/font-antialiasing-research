@@ -1,12 +1,13 @@
 import numpy as np
 import numpy.typing as npt
 import sys
+import os
 from PIL import Image
 import lzma
 
 from typing import Any, List
 
-def save_sdf(sdf: npt.NDArray[Any], filename: str, sdf_channels: int, sdf_width: int, sdf_height: int, max_error=0):
+def compress_sdf(sdf: npt.NDArray[Any], sdf_channels, sdf_width, sdf_height, max_error=0):
     compressed_data = bytearray()
     for channel in range(sdf_channels):
         channel_data = sdf[:,:,channel].flatten()
@@ -17,9 +18,7 @@ def save_sdf(sdf: npt.NDArray[Any], filename: str, sdf_channels: int, sdf_width:
 
     # compress vdt encoded data
     compressed_data = lzma.compress(compressed_data)
-
-    with open(filename, "wb") as f:
-        f.write(compressed_data)
+    return compressed_data
 
 def predict_func(width, max_error):
     def predict(sdf, i):
@@ -85,10 +84,20 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("run file as 'ssim.py {sdf_image_path}'")
         exit()
-    
-    load_images = lambda x: np.asarray(Image.open(x))
-    img_path = sys.argv[1]
-    img = load_images(img_path)
 
-    height, width, channels = img.shape
-    save_sdf(img, f'{img_path}.comp', channels, width, height)
+    image_path = sys.argv[1]
+    original_size = os.path.getsize(image_path)
+    print(f'uncompressed size: {original_size} bytes')
+
+    img_data = np.asarray(Image.open(image_path))
+    height, width, channels = img_data.shape
+
+    compressed_data = compress_sdf(img_data, channels, width, height)
+
+    compressed_size = len(compressed_data)
+    print(f'compressed size: {compressed_size} bytes ({round(compressed_size / original_size * 100, 2)}% of original)')
+
+    output = f'{image_path}.comp'
+    with open(output, "wb") as f:
+        f.write(compressed_data)
+        print(f'written compressed data to {output}')
