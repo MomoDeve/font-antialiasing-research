@@ -1,6 +1,7 @@
 import {Pane} from 'tweakpane';
 import './index.scss';
 import {RenderProgram, Renderer} from './Renderer';
+import {downloadImage} from './utils/downloadImage';
 const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
 console.assert(canvas !== null, "Element with id 'main-canvas' must exists");
 
@@ -30,6 +31,10 @@ if (renderer) {
       {text: 'anti-alias', value: RenderProgram.AntiAlias},
     ],
   });
+
+  const tools = pane.addFolder({title: 'tools', expanded: true});
+  const api = tools.addButton({title: 'download render'});
+  api.on('click', () => downloadImage(renderer.canvas, 'image/png', 'render.png'));
 }
 
 const invalidateCanvasSize = () => {

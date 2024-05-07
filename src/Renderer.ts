@@ -49,7 +49,7 @@ class Renderer {
 
   perfQuery: Query;
 
-  constructor(private canvas: HTMLCanvasElement, private gl: WebGL2RenderingContext) {
+  constructor(readonly canvas: HTMLCanvasElement, private gl: WebGL2RenderingContext) {
     this.render = this.render.bind(this);
 
     this.basicProgram = twgl.createProgramInfo(gl, [basicVS.sourceCode, basicFS.sourceCode], ['vin_index']);
@@ -81,6 +81,7 @@ class Renderer {
       depth: false,
       stencil: false,
       powerPreference: 'high-performance',
+      preserveDrawingBuffer: true,
     };
     const gl = canvas.getContext('webgl2', attributes);
     if (gl === null) {
