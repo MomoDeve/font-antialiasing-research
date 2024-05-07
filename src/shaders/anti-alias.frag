@@ -8,8 +8,6 @@ uniform float u_smoothness;
 
 uniform sampler2D u_font_atlas;
 
-const vec3 color = vec3(0.0, 0.0, 0.0);
-
 float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));
 }
@@ -40,10 +38,11 @@ void main()
   );
   float opacity = max(max(samples[0], samples[1]), max(samples[2], samples[3]));
 
-  const float p1 = 1.0 / 3.0;
-  const float p2 = 2.0 / 3.0;
   vec2 mixed = mix(samples.xz, samples.yw, vec2(0.5));
   vec3 RGB = vec3(samples.x, mixed.x, samples.y) + vec3(mixed.y);
+
+  const float p1 = 1.0 / 3.0;
+  const float p2 = 2.0 / 3.0;
   vec3 color = 
     RGB.r * vec3(1.0,  p1, 0.0) +
     RGB.g * vec3( p2, 1.0,  p2) +
