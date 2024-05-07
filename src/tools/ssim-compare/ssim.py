@@ -18,8 +18,7 @@ def create_window(window_size, channel=1):
     return window
 
 def ssim(img1, img2, val_range, window_size=11, window=None, size_average=True, full=False):
-    L = val_range # L is the dynamic range of the pixel values (255 for 8-bit grayscale images),
-
+    L = val_range
     pad = window_size // 2
     
     try:
@@ -42,8 +41,8 @@ def ssim(img1, img2, val_range, window_size=11, window=None, size_average=True, 
     sigma2_sq = F.conv2d(img2 * img2, window, padding=pad, groups=channels) - mu2_sq
     sigma12 =  F.conv2d(img1 * img2, window, padding=pad, groups=channels) - mu12
 
-    C1 = (0.01 ) ** 2  # NOTE: Removed L from here (ref PT implementation)
-    C2 = (0.03 ) ** 2 
+    C1 = (0.01 * L) ** 2
+    C2 = (0.03 * L) ** 2 
 
     contrast_metric = (2.0 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)
     contrast_metric = torch.mean(contrast_metric)
@@ -70,7 +69,7 @@ if __name__ == "__main__":
         print("run file as 'ssim.py {image1_path} {image2_path}'")
         exit()
 
-    load_images = lambda x: np.asarray(Image.open(x).convert('RGB'))
+    load_images = lambda x: np.array(Image.open(x).convert('RGB'))
     img1 = load_images(sys.argv[1])
     img2 = load_images(sys.argv[2])
 
