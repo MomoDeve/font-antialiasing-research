@@ -70,7 +70,7 @@ if __name__ == "__main__":
         print("run file as 'ssim.py {image1_path} {image2_path}'")
         exit()
 
-    load_images = lambda x: np.asarray(Image.open(x))
+    load_images = lambda x: np.asarray(Image.open(x).convert('RGB'))
     img1 = load_images(sys.argv[1])
     img2 = load_images(sys.argv[2])
 
