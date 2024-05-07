@@ -16,7 +16,7 @@ float median(float r, float g, float b) {
 
 float sampleSDF(vec2 texcoord, float distance) {
   vec3 msd = texture(u_font_atlas, texcoord).rgb;
-  float sd = median(msd.r, msd.g, msd.b) - 0.5;
+  float sd = median(msd.r, msd.g, msd.b) - 0.65;
   float opacity = clamp(sd * distance + 0.5, 0.0, 1.0);
   return opacity;
 }

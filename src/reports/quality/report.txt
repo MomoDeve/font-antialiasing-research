@@ -1,0 +1,17 @@
+SSIM Compare Report
+
+OpenSans (method vs reference)
+SSIM Index                  Method
+Basic                       0.9872
+Smooth                      0.9873
+AntiAlias                   0.9881
+Smooth[Smoothness=4]        0.9877
+AntiAlias[Smoothness=4]     0.9883
+
+GreatVibes (method vs reference)
+SSIM Index                  Method
+Basic                       0.9916
+Smooth                      0.9916
+AntiAlias                   0.9917
+Smooth[Smoothness=4]        0.9919
+AntiAlias[Smoothness=4]     0.9921
