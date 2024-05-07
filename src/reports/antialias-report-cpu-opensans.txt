@@ -1,0 +1,6 @@
+Performance Report (Method: Anti Alias)
+Average Time: 5.874 ms
+Minimum Time: 5.587 ms
+Maximum Time: 6.576 ms
+Median Time: 5.847 ms
+Standard Deviation: 0.145 ms

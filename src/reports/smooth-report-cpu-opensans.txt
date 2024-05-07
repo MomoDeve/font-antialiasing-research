@@ -1,0 +1,6 @@
+Performance Report (Method: Smooth Basic)
+Average Time: 2.969 ms
+Minimum Time: 2.827 ms
+Maximum Time: 3.335 ms
+Median Time: 2.932 ms
+Standard Deviation: 0.107 ms
