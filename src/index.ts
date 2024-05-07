@@ -2,6 +2,7 @@ import {Pane} from 'tweakpane';
 import './index.scss';
 import {RenderProgram, Renderer} from './Renderer';
 import {downloadImage} from './utils/downloadImage';
+import {downloadFile} from './utils/downloadFile';
 const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
 console.assert(canvas !== null, "Element with id 'main-canvas' must exists");
 
@@ -33,8 +34,13 @@ if (renderer) {
   });
 
   const tools = pane.addFolder({title: 'tools', expanded: true});
-  const api = tools.addButton({title: 'download render'});
-  api.on('click', () => downloadImage(renderer.canvas, 'image/png', 'render.png'));
+  tools
+    .addButton({title: 'download render'})
+    .on('click', () => downloadImage(renderer.canvas, 'image/png', 'render.png'));
+
+  tools
+    .addButton({title: 'download report'})
+    .on('click', () => downloadFile(renderer.getPerformanceReport(), 'report.txt'));
 }
 
 const invalidateCanvasSize = () => {

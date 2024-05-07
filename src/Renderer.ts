@@ -36,7 +36,8 @@ class Renderer {
     dt: 0, // time between frame begin points (delta time)
     fps: 0, // Frames Per Second
     lastTime: 0, // last render timestamp
-    renderTime: 0, // time spend rendering (ns)
+    renderTime: 0, // time spend rendering (ms)
+    renderTimes: [] as number[],
   };
 
   props = {
@@ -45,9 +46,9 @@ class Renderer {
     program: RenderProgram.Basic,
   };
 
-  atlas: FontAtlas;
+  private atlas: FontAtlas;
 
-  perfQuery: Query;
+  private perfQuery: Query;
 
   constructor(readonly canvas: HTMLCanvasElement, private gl: WebGL2RenderingContext) {
     this.render = this.render.bind(this);
@@ -102,7 +103,34 @@ class Renderer {
     this.onUpdateSubscription = cb;
   }
 
-  renderGlyph(
+  private calculateStatistics(renderTimes: number[]) {
+    const sum = renderTimes.reduce((a, b) => a + b, 0);
+    const average = sum / renderTimes.length;
+    const sortedTimes = [...renderTimes].sort((a, b) => a - b);
+    const min = sortedTimes[0];
+    const max = sortedTimes[sortedTimes.length - 1];
+    const median =
+      sortedTimes.length % 2 === 0
+        ? (sortedTimes[sortedTimes.length / 2 - 1] + sortedTimes[sortedTimes.length / 2]) / 2
+        : sortedTimes[Math.floor(sortedTimes.length / 2)];
+    const stdDeviation = Math.sqrt(
+      renderTimes.map(time => Math.pow(time - average, 2)).reduce((a, b) => a + b, 0) / renderTimes.length
+    );
+    return {average, min, max, median, stdDeviation};
+  }
+
+  getPerformanceReport(): string {
+    const stats = this.calculateStatistics(this.stats.renderTimes);
+    return `Performance Report:
+Average Time: ${stats.average.toFixed(3)} ms
+Minimum Time: ${stats.min.toFixed(3)} ms
+Maximum Time: ${stats.max.toFixed(3)} ms
+Median Time: ${stats.median.toFixed(3)} ms
+Standard Deviation: ${stats.stdDeviation.toFixed(3)} ms
+`;
+  }
+
+  private renderGlyph(
     char: string,
     program: twgl.ProgramInfo,
     shaderVS: GlslShader,
@@ -150,7 +178,7 @@ class Renderer {
     return xOffset;
   }
 
-  renderText(
+  private renderText(
     text: string,
     program: twgl.ProgramInfo,
     shaderVS: GlslShader,
@@ -192,7 +220,12 @@ class Renderer {
 
     const renderTime = this.perfQuery.poll();
     if (renderTime) {
-      this.stats.renderTime = renderTime / 1000000;
+      const renderTimeMs = renderTime / 1000000;
+      this.stats.renderTime = renderTimeMs;
+      this.stats.renderTimes.push(renderTimeMs);
+      if (this.stats.renderTimes.length > 60) {
+        this.stats.renderTimes.shift(); // remove the oldest measurement to maintain a fixed size
+      }
     }
 
     this.perfQuery.start();
