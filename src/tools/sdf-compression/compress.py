@@ -89,10 +89,11 @@ if __name__ == "__main__":
 
     image_path = sys.argv[1]
     original_size = os.path.getsize(image_path)
-    print(f'uncompressed size: {original_size} bytes')
+    print(f'original size: {original_size} bytes')
 
     img_data = np.asarray(Image.open(image_path))
     height, width, channels = img_data.shape
+    print(f'raw binary size: {img_data.nbytes} bytes')
 
     compressed_data = compress_sdf(img_data, channels, width, height)
 

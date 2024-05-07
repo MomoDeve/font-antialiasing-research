@@ -1,2 +1,3 @@
-uncompressed size: 283572 bytes
+original size: 283572 bytes
+raw binary size: 1642800 bytes
 compressed size: 185864 bytes (65.54% of original)
