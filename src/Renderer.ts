@@ -4,16 +4,16 @@ import smoothBasicFS from './shaders/smooth-basic.frag';
 import antiAliasFS from './shaders/anti-alias.frag';
 import basicVS from './shaders/basic.vert';
 import {FontAtlas} from './font-atlas/FontAtlas';
-import fontAtlasImage from './res/sample-font.png';
-import * as fontAtlasMeta from './res/sample-font.json';
+import fontAtlasImage from './res/sample-font-great-vibes.png';
+import * as fontAtlasMeta from './res/sample-font-great-vibes.json';
 import {Query} from './Query';
 // eslint-disable-next-line node/no-unpublished-import
 import type {GlslShader} from 'webpack-glsl-minify';
 
 export enum RenderProgram {
-  Basic,
-  SmoothBasic,
-  AntiAlias,
+  Basic = 'basic',
+  SmoothBasic = 'Smooth Basic',
+  AntiAlias = 'Anti Alias',
 }
 
 class Renderer {
@@ -121,7 +121,7 @@ class Renderer {
 
   getPerformanceReport(): string {
     const stats = this.calculateStatistics(this.stats.renderTimes);
-    return `Performance Report:
+    return `Performance Report (Method: ${this.props.program})
 Average Time: ${stats.average.toFixed(3)} ms
 Minimum Time: ${stats.min.toFixed(3)} ms
 Maximum Time: ${stats.max.toFixed(3)} ms

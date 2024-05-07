@@ -1,0 +1,6 @@
+Performance Report (Method: basic)
+Average Time: 0.156 ms
+Minimum Time: 0.135 ms
+Maximum Time: 0.183 ms
+Median Time: 0.157 ms
+Standard Deviation: 0.009 ms

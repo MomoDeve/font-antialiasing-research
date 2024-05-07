@@ -1,0 +1,2 @@
+uncompressed size: 283572 bytes
+compressed size: 185864 bytes (65.54% of original)
