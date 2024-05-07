@@ -4,8 +4,8 @@ import smoothBasicFS from './shaders/smooth-basic.frag';
 import antiAliasFS from './shaders/anti-alias.frag';
 import basicVS from './shaders/basic.vert';
 import {FontAtlas} from './font-atlas/FontAtlas';
-import fontAtlasImage from './res/sample-font-great-vibes.png';
-import * as fontAtlasMeta from './res/sample-font-great-vibes.json';
+import fontAtlasImage from './res/sample-font.png';
+import * as fontAtlasMeta from './res/sample-font.json';
 import {Query} from './Query';
 // eslint-disable-next-line node/no-unpublished-import
 import type {GlslShader} from 'webpack-glsl-minify';
