@@ -9,6 +9,7 @@ import * as fontAtlasMeta from './res/sample-font.json';
 import {Query} from './Query';
 // eslint-disable-next-line node/no-unpublished-import
 import type {GlslShader} from 'webpack-glsl-minify';
+import type {FontAtlasMeta} from './font-atlas/FontAtlasMeta';
 
 export enum RenderProgram {
   Basic = 'basic',
@@ -101,6 +102,10 @@ class Renderer {
 
   onUpdate(cb: VoidFunction) {
     this.onUpdateSubscription = cb;
+  }
+
+  setFont(fontAtlasSrc: string, fontAtlasMeta: FontAtlasMeta) {
+    this.atlas = new FontAtlas(this.gl, fontAtlasSrc, fontAtlasMeta);
   }
 
   private calculateStatistics(renderTimes: number[]) {

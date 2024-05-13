@@ -3,6 +3,7 @@ import './index.scss';
 import {RenderProgram, Renderer} from './Renderer';
 import {downloadImage} from './utils/downloadImage';
 import {downloadFile} from './utils/downloadFile';
+import {uploadFont} from './utils/uploadFont';
 const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
 console.assert(canvas !== null, "Element with id 'main-canvas' must exists");
 
@@ -34,6 +35,12 @@ if (renderer) {
   });
 
   const tools = pane.addFolder({title: 'tools', expanded: true});
+
+  tools.addButton({title: 'load font'}).on('click', async () => {
+    const result = await uploadFont();
+    result && renderer.setFont(result.fontAtlasSrc, result.fontAtlasMeta);
+  });
+
   tools
     .addButton({title: 'download render'})
     .on('click', () => downloadImage(renderer.canvas, 'image/png', 'render.png'));
