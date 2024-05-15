@@ -1,3 +1,9 @@
+VDT+LZMA:
 original size: 283572 bytes
 raw binary size: 1642800 bytes
 compressed size: 185864 bytes (65.54% of original)
+
+ZLIB:
+original size: 283572 bytes
+raw binary size: 1642800 bytes
+compressed size: 248263 bytes (87.55% of original)
